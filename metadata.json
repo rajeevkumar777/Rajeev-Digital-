@@ -1,0 +1,6 @@
+{
+  "name": "Rajeev Digital",
+  "description": "Agency management Android app for Rajeev Digital featuring leads, clients, projects, tasks, services catalogue, quotations, invoices, WhatsApp shortcuts, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

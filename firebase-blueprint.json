@@ -1,0 +1,256 @@
+{
+  "entities": {
+    "AgencyProfile": {
+      "title": "AgencyProfile",
+      "description": "Agency owner profile, business branding, and workspace preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "businessName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "instagramHandle": { "type": "string" },
+        "currency": { "type": "string", "enum": ["INR"] },
+        "dateFormat": { "type": "string", "enum": ["dd MMM yyyy", "dd/MM/yyyy", "yyyy-MM-dd"] },
+        "themeMode": { "type": "string", "enum": ["DARK_NAVY", "MIDNIGHT", "SYSTEM"] },
+        "notificationsEnabled": { "type": "boolean" },
+        "seededDefaults": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp set via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp set via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "displayName", "businessName", "currency", "notificationsEnabled", "seededDefaults", "createdAt", "updatedAt"]
+    },
+    "AgencyService": {
+      "title": "AgencyService",
+      "description": "Dynamic agency service item with category, billing type, and pricing.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["DIGITAL_MARKETING", "CONTENT_CREATION", "AI_AUTOMATION", "WEBSITE_ECOMMERCE", "SOFTWARE_SOLUTIONS", "CONSULTING"]
+        },
+        "price": { "type": "number" },
+        "fixedPrice": { "type": "boolean" },
+        "billingType": { "type": "string", "enum": ["MONTHLY", "ONE_TIME", "PER_SESSION", "CUSTOM_QUOTE"] },
+        "description": { "type": "string" },
+        "active": { "type": "boolean" },
+        "sortOrder": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "category", "price", "fixedPrice", "billingType", "active", "sortOrder", "createdAt", "updatedAt"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Prospective agency lead with source, interested services, status, and follow-up date.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "businessName": { "type": "string" },
+        "source": { "type": "string" },
+        "interestedServices": { "type": "array" },
+        "status": { "type": "string", "enum": ["NEW", "CONTACTED", "INTERESTED", "FOLLOW_UP", "CONVERTED", "LOST"] },
+        "notes": { "type": "string" },
+        "followUpDateMillis": { "type": "integer" },
+        "convertedClientId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "status", "interestedServices", "createdAt", "updatedAt"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Active or past agency client profile.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "businessName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "selectedServices": { "type": "array" },
+        "notes": { "type": "string" },
+        "leadId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "selectedServices", "createdAt", "updatedAt"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Client project with timeline, budget, progress, and assigned employee.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "startDateMillis": { "type": "integer" },
+        "deadlineMillis": { "type": "integer" },
+        "budget": { "type": "number" },
+        "selectedServices": { "type": "array" },
+        "progress": { "type": "integer" },
+        "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "ON_HOLD"] },
+        "assignedEmployeeId": { "type": "string" },
+        "assignedEmployeeName": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "clientName", "startDateMillis", "deadlineMillis", "budget", "selectedServices", "progress", "status", "createdAt", "updatedAt"]
+    },
+    "AgencyTask": {
+      "title": "AgencyTask",
+      "description": "Agency task with priority, due date, status, and employee assignment.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "COMPLETED"] },
+        "dueDateMillis": { "type": "integer" },
+        "assignedEmployeeId": { "type": "string" },
+        "assignedEmployeeName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "priority", "status", "dueDateMillis", "createdAt", "updatedAt"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Client invoice with bounded line items, tax, discount, and payment history.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientBusiness": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "taxPercent": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["UNPAID", "PARTIALLY_PAID", "PAID"] },
+        "dueDateMillis": { "type": "integer" },
+        "paymentHistory": { "type": "array" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "invoiceNumber", "clientName", "items", "subtotal", "discountAmount", "taxPercent", "taxAmount", "totalAmount", "paidAmount", "status", "dueDateMillis", "paymentHistory", "createdAt", "updatedAt"]
+    },
+    "Quotation": {
+      "title": "Quotation",
+      "description": "Service quotation with custom pricing, discounts, and conversion references.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "quotationNumber": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientBusiness": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["DRAFT", "SENT", "ACCEPTED", "DECLINED"] },
+        "validUntilMillis": { "type": "integer" },
+        "notes": { "type": "string" },
+        "convertedProjectId": { "type": "string" },
+        "convertedInvoiceId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quotationNumber", "clientName", "items", "subtotal", "discountAmount", "totalAmount", "status", "validUntilMillis", "createdAt", "updatedAt"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Agency team member with role and active status.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "designation": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "EMPLOYEE"] },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "role", "active", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Recent agency activity feed record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "category": { "type": "string", "enum": ["LEAD", "CLIENT", "PROJECT", "TASK", "INVOICE", "QUOTATION", "SERVICE", "TEAM"] },
+        "relatedId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/AgencyProfile" },
+      "description": "User-scoped agency profile and settings."
+    },
+    "/users/{userId}/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/AgencyService" },
+      "description": "Agency services catalogue."
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Agency CRM leads."
+    },
+    "/users/{userId}/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Agency clients."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Client projects."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/AgencyTask" },
+      "description": "Agency tasks."
+    },
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Invoices and payment records."
+    },
+    "/users/{userId}/quotations/{quotationId}": {
+      "schema": { "$ref": "#/entities/Quotation" },
+      "description": "Client service quotations."
+    },
+    "/users/{userId}/employees/{employeeId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Agency team roster."
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Recent agency activity log."
+    }
+  }
+}

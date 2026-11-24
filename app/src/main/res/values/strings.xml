@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Rajeev Digital</string>
+    <string name="brand_tagline">WhatsApp Marketing Expert | Grow Your Business Digitally</string>
+    <string name="brand_instagram">@rajeev.digital.ai</string>
+    <string name="brand_whatsapp">+91 8307229361</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="notification_channel_name">Agency Reminders</string>
+    <string name="notification_channel_desc">Upcoming project deadlines, pending tasks, invoice due dates, and lead follow-ups</string>
+</resources>

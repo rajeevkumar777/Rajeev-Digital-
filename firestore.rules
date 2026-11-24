@@ -1,0 +1,351 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBoundedString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isOptionalBoundedString(data, field, maxLen) {
+      return !('' + field in data) || data[field] == null || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isStringList(data, field, maxSize) {
+      return data[field] is list &&
+             data[field].size() <= maxSize &&
+             (data[field].size() == 0 || data[field][0] is string);
+    }
+
+    function isValidAgencyProfile(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.displayName, 1, 100) &&
+             (!('email' in data) || data.email == null || isBoundedString(data.email, 0, 120)) &&
+             isBoundedString(data.businessName, 1, 100) &&
+             (!('tagline' in data) || data.tagline == null || isBoundedString(data.tagline, 0, 150)) &&
+             (!('whatsappNumber' in data) || data.whatsappNumber == null || isBoundedString(data.whatsappNumber, 0, 25)) &&
+             (!('instagramHandle' in data) || data.instagramHandle == null || isBoundedString(data.instagramHandle, 0, 60)) &&
+             data.currency == 'INR' &&
+             (!('dateFormat' in data) || data.dateFormat in ['dd MMM yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd']) &&
+             (!('themeMode' in data) || data.themeMode in ['DARK_NAVY', 'MIDNIGHT', 'SYSTEM']) &&
+             data.notificationsEnabled is bool &&
+             data.seededDefaults is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAgencyService(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.name, 1, 100) &&
+             data.category in ['DIGITAL_MARKETING', 'CONTENT_CREATION', 'AI_AUTOMATION', 'WEBSITE_ECOMMERCE', 'SOFTWARE_SOLUTIONS', 'CONSULTING'] &&
+             data.price is number && data.price >= 0 && data.price <= 100000000 &&
+             data.fixedPrice is bool &&
+             data.billingType in ['MONTHLY', 'ONE_TIME', 'PER_SESSION', 'CUSTOM_QUOTE'] &&
+             (!('description' in data) || data.description == null || isBoundedString(data.description, 0, 1000)) &&
+             data.active is bool &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 10000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidLead(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.name, 1, 100) &&
+             isBoundedString(data.phone, 0, 30) &&
+             (!('email' in data) || data.email == null || isBoundedString(data.email, 0, 120)) &&
+             (!('businessName' in data) || data.businessName == null || isBoundedString(data.businessName, 0, 120)) &&
+             (!('source' in data) || data.source == null || isBoundedString(data.source, 0, 60)) &&
+             isStringList(data, 'interestedServices', 25) &&
+             data.status in ['NEW', 'CONTACTED', 'INTERESTED', 'FOLLOW_UP', 'CONVERTED', 'LOST'] &&
+             (!('notes' in data) || data.notes == null || isBoundedString(data.notes, 0, 2000)) &&
+             (!('followUpDateMillis' in data) || data.followUpDateMillis == null || (data.followUpDateMillis is int && data.followUpDateMillis >= 0)) &&
+             (!('convertedClientId' in data) || data.convertedClientId == null || isBoundedString(data.convertedClientId, 0, 128)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidClient(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.name, 1, 100) &&
+             (!('businessName' in data) || data.businessName == null || isBoundedString(data.businessName, 0, 120)) &&
+             isBoundedString(data.phone, 0, 30) &&
+             (!('email' in data) || data.email == null || isBoundedString(data.email, 0, 120)) &&
+             isStringList(data, 'selectedServices', 25) &&
+             (!('notes' in data) || data.notes == null || isBoundedString(data.notes, 0, 3000)) &&
+             (!('leadId' in data) || data.leadId == null || isBoundedString(data.leadId, 0, 128)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidProject(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.name, 1, 120) &&
+             (!('description' in data) || data.description == null || isBoundedString(data.description, 0, 2000)) &&
+             (!('clientId' in data) || data.clientId == null || isBoundedString(data.clientId, 0, 128)) &&
+             isBoundedString(data.clientName, 0, 120) &&
+             data.startDateMillis is int && data.startDateMillis >= 0 &&
+             data.deadlineMillis is int && data.deadlineMillis >= 0 &&
+             data.budget is number && data.budget >= 0 && data.budget <= 1000000000 &&
+             isStringList(data, 'selectedServices', 25) &&
+             data.progress is int && data.progress >= 0 && data.progress <= 100 &&
+             data.status in ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'] &&
+             (!('assignedEmployeeId' in data) || data.assignedEmployeeId == null || isBoundedString(data.assignedEmployeeId, 0, 128)) &&
+             (!('assignedEmployeeName' in data) || data.assignedEmployeeName == null || isBoundedString(data.assignedEmployeeName, 0, 100)) &&
+             (!('notes' in data) || data.notes == null || isBoundedString(data.notes, 0, 2000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidTask(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.title, 1, 150) &&
+             (!('description' in data) || data.description == null || isBoundedString(data.description, 0, 1500)) &&
+             (!('projectId' in data) || data.projectId == null || isBoundedString(data.projectId, 0, 128)) &&
+             (!('projectName' in data) || data.projectName == null || isBoundedString(data.projectName, 0, 120)) &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] &&
+             data.status in ['TODO', 'IN_PROGRESS', 'COMPLETED'] &&
+             data.dueDateMillis is int && data.dueDateMillis >= 0 &&
+             (!('assignedEmployeeId' in data) || data.assignedEmployeeId == null || isBoundedString(data.assignedEmployeeId, 0, 128)) &&
+             (!('assignedEmployeeName' in data) || data.assignedEmployeeName == null || isBoundedString(data.assignedEmployeeName, 0, 100)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidInvoice(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.invoiceNumber, 1, 40) &&
+             (!('clientId' in data) || data.clientId == null || isBoundedString(data.clientId, 0, 128)) &&
+             isBoundedString(data.clientName, 1, 120) &&
+             (!('clientPhone' in data) || data.clientPhone == null || isBoundedString(data.clientPhone, 0, 30)) &&
+             (!('clientBusiness' in data) || data.clientBusiness == null || isBoundedString(data.clientBusiness, 0, 120)) &&
+             data.items is list && data.items.size() >= 1 && data.items.size() <= 20 && data.items[0] is map &&
+             data.subtotal is number && data.subtotal >= 0 &&
+             data.discountAmount is number && data.discountAmount >= 0 &&
+             data.taxPercent is number && data.taxPercent >= 0 && data.taxPercent <= 100 &&
+             data.taxAmount is number && data.taxAmount >= 0 &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             data.paidAmount is number && data.paidAmount >= 0 &&
+             data.status in ['UNPAID', 'PARTIALLY_PAID', 'PAID'] &&
+             data.dueDateMillis is int && data.dueDateMillis >= 0 &&
+             data.paymentHistory is list && data.paymentHistory.size() <= 30 && (data.paymentHistory.size() == 0 || data.paymentHistory[0] is map) &&
+             (!('notes' in data) || data.notes == null || isBoundedString(data.notes, 0, 1500)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidQuotation(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.quotationNumber, 1, 40) &&
+             (!('clientId' in data) || data.clientId == null || isBoundedString(data.clientId, 0, 128)) &&
+             isBoundedString(data.clientName, 1, 120) &&
+             (!('clientPhone' in data) || data.clientPhone == null || isBoundedString(data.clientPhone, 0, 30)) &&
+             (!('clientBusiness' in data) || data.clientBusiness == null || isBoundedString(data.clientBusiness, 0, 120)) &&
+             data.items is list && data.items.size() >= 1 && data.items.size() <= 20 && data.items[0] is map &&
+             data.subtotal is number && data.subtotal >= 0 &&
+             data.discountAmount is number && data.discountAmount >= 0 &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             data.status in ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED'] &&
+             data.validUntilMillis is int && data.validUntilMillis >= 0 &&
+             (!('notes' in data) || data.notes == null || isBoundedString(data.notes, 0, 1500)) &&
+             (!('convertedProjectId' in data) || data.convertedProjectId == null || isBoundedString(data.convertedProjectId, 0, 128)) &&
+             (!('convertedInvoiceId' in data) || data.convertedInvoiceId == null || isBoundedString(data.convertedInvoiceId, 0, 128)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidEmployee(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.name, 1, 100) &&
+             (!('email' in data) || data.email == null || isBoundedString(data.email, 0, 120)) &&
+             (!('phone' in data) || data.phone == null || isBoundedString(data.phone, 0, 30)) &&
+             (!('designation' in data) || data.designation == null || isBoundedString(data.designation, 0, 80)) &&
+             data.role in ['ADMIN', 'EMPLOYEE'] &&
+             data.active is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidActivity(data, userId) {
+      return data.userId == userId &&
+             isBoundedString(data.title, 1, 150) &&
+             (!('detail' in data) || data.detail == null || isBoundedString(data.detail, 0, 400)) &&
+             data.category in ['LEAD', 'CLIENT', 'PROJECT', 'TASK', 'INVOICE', 'QUOTATION', 'SERVICE', 'TEAM'] &&
+             (!('relatedId' in data) || data.relatedId == null || isBoundedString(data.relatedId, 0, 128)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isValidId(userId) && isOwner(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'businessName', 'currency', 'notificationsEnabled', 'seededDefaults', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'businessName', 'tagline', 'whatsappNumber', 'instagramHandle', 'currency', 'dateFormat', 'themeMode', 'notificationsEnabled', 'seededDefaults', 'createdAt', 'updatedAt']) &&
+                       isValidAgencyProfile(incoming(), userId);
+      allow update: if isValidId(userId) && isOwner(userId) &&
+                       isValidAgencyProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'businessName', 'tagline', 'whatsappNumber', 'instagramHandle', 'currency', 'dateFormat', 'themeMode', 'notificationsEnabled', 'seededDefaults', 'updatedAt']);
+      allow delete: if false;
+
+      match /services/{serviceId} {
+        allow get: if isValidId(serviceId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(serviceId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'category', 'price', 'fixedPrice', 'billingType', 'active', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'category', 'price', 'fixedPrice', 'billingType', 'description', 'active', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                         isValidAgencyService(incoming(), userId);
+        allow update: if isValidId(serviceId) && isOwner(userId) &&
+                         isValidAgencyService(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'price', 'fixedPrice', 'billingType', 'description', 'active', 'sortOrder', 'updatedAt']);
+        allow delete: if isValidId(serviceId) && isOwner(userId);
+      }
+
+      match /leads/{leadId} {
+        allow get: if isValidId(leadId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(leadId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'phone', 'status', 'interestedServices', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'phone', 'email', 'businessName', 'source', 'interestedServices', 'status', 'notes', 'followUpDateMillis', 'convertedClientId', 'createdAt', 'updatedAt']) &&
+                         isValidLead(incoming(), userId);
+        allow update: if isValidId(leadId) && isOwner(userId) &&
+                         isValidLead(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'email', 'businessName', 'source', 'interestedServices', 'status', 'notes', 'followUpDateMillis', 'convertedClientId', 'updatedAt']);
+        allow delete: if isValidId(leadId) && isOwner(userId);
+      }
+
+      match /clients/{clientId} {
+        allow get: if isValidId(clientId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(clientId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'phone', 'selectedServices', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'businessName', 'phone', 'email', 'selectedServices', 'notes', 'leadId', 'createdAt', 'updatedAt']) &&
+                         isValidClient(incoming(), userId);
+        allow update: if isValidId(clientId) && isOwner(userId) &&
+                         isValidClient(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'businessName', 'phone', 'email', 'selectedServices', 'notes', 'leadId', 'updatedAt']);
+        allow delete: if isValidId(clientId) && isOwner(userId);
+      }
+
+      match /projects/{projectId} {
+        allow get: if isValidId(projectId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(projectId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'clientName', 'startDateMillis', 'deadlineMillis', 'budget', 'selectedServices', 'progress', 'status', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'description', 'clientId', 'clientName', 'startDateMillis', 'deadlineMillis', 'budget', 'selectedServices', 'progress', 'status', 'assignedEmployeeId', 'assignedEmployeeName', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidProject(incoming(), userId);
+        allow update: if isValidId(projectId) && isOwner(userId) &&
+                         isValidProject(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'clientId', 'clientName', 'startDateMillis', 'deadlineMillis', 'budget', 'selectedServices', 'progress', 'status', 'assignedEmployeeId', 'assignedEmployeeName', 'notes', 'updatedAt']);
+        allow delete: if isValidId(projectId) && isOwner(userId);
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isValidId(taskId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(taskId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'priority', 'status', 'dueDateMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'description', 'projectId', 'projectName', 'priority', 'status', 'dueDateMillis', 'assignedEmployeeId', 'assignedEmployeeName', 'createdAt', 'updatedAt']) &&
+                         isValidTask(incoming(), userId);
+        allow update: if isValidId(taskId) && isOwner(userId) &&
+                         isValidTask(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'projectId', 'projectName', 'priority', 'status', 'dueDateMillis', 'assignedEmployeeId', 'assignedEmployeeName', 'updatedAt']);
+        allow delete: if isValidId(taskId) && isOwner(userId);
+      }
+
+      match /invoices/{invoiceId} {
+        allow get: if isValidId(invoiceId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(invoiceId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'invoiceNumber', 'clientName', 'items', 'subtotal', 'discountAmount', 'taxPercent', 'taxAmount', 'totalAmount', 'paidAmount', 'status', 'dueDateMillis', 'paymentHistory', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'invoiceNumber', 'clientId', 'clientName', 'clientPhone', 'clientBusiness', 'items', 'subtotal', 'discountAmount', 'taxPercent', 'taxAmount', 'totalAmount', 'paidAmount', 'status', 'dueDateMillis', 'paymentHistory', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidInvoice(incoming(), userId);
+        allow update: if isValidId(invoiceId) && isOwner(userId) &&
+                         isValidInvoice(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['invoiceNumber', 'clientId', 'clientName', 'clientPhone', 'clientBusiness', 'items', 'subtotal', 'discountAmount', 'taxPercent', 'taxAmount', 'totalAmount', 'paidAmount', 'status', 'dueDateMillis', 'paymentHistory', 'notes', 'updatedAt']);
+        allow delete: if isValidId(invoiceId) && isOwner(userId);
+      }
+
+      match /quotations/{quotationId} {
+        allow get: if isValidId(quotationId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(quotationId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'quotationNumber', 'clientName', 'items', 'subtotal', 'discountAmount', 'totalAmount', 'status', 'validUntilMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'quotationNumber', 'clientId', 'clientName', 'clientPhone', 'clientBusiness', 'items', 'subtotal', 'discountAmount', 'totalAmount', 'status', 'validUntilMillis', 'notes', 'convertedProjectId', 'convertedInvoiceId', 'createdAt', 'updatedAt']) &&
+                         isValidQuotation(incoming(), userId);
+        allow update: if isValidId(quotationId) && isOwner(userId) &&
+                         isValidQuotation(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['quotationNumber', 'clientId', 'clientName', 'clientPhone', 'clientBusiness', 'items', 'subtotal', 'discountAmount', 'totalAmount', 'status', 'validUntilMillis', 'notes', 'convertedProjectId', 'convertedInvoiceId', 'updatedAt']);
+        allow delete: if isValidId(quotationId) && isOwner(userId);
+      }
+
+      match /employees/{employeeId} {
+        allow get: if isValidId(employeeId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(employeeId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'name', 'role', 'active', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'email', 'phone', 'designation', 'role', 'active', 'createdAt', 'updatedAt']) &&
+                         isValidEmployee(incoming(), userId);
+        allow update: if isValidId(employeeId) && isOwner(userId) &&
+                         isValidEmployee(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'phone', 'designation', 'role', 'active', 'updatedAt']);
+        allow delete: if isValidId(employeeId) && isOwner(userId);
+      }
+
+      match /activities/{activityId} {
+        allow get: if isValidId(activityId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isValidId(activityId) && isOwner(userId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'category', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'detail', 'category', 'relatedId', 'createdAt']) &&
+                         isValidActivity(incoming(), userId);
+        allow update: if false;
+        allow delete: if isValidId(activityId) && isOwner(userId);
+      }
+    }
+  }
+}
