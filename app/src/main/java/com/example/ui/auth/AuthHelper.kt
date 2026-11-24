@@ -14,6 +14,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,10 @@ object AuthHelper {
         onAuthSuccess: () -> Unit,
         onUnauthenticated: () -> Unit
     ) {
+        if (FirebaseApp.getApps(context).isEmpty()) {
+            onUnauthenticated()
+            return
+        }
         if (Firebase.auth.currentUser != null) {
             onAuthSuccess()
             return

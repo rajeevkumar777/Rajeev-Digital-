@@ -3,7 +3,6 @@ package com.example.util
 import com.example.data.model.AgencyService
 import com.example.data.model.BillingType
 import com.google.firebase.Timestamp
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -11,14 +10,24 @@ import kotlin.math.roundToLong
 
 object FormatUtils {
 
-    private val indianLocale = Locale("en", "IN")
+    private val indianLocale = Locale.forLanguageTag("en-IN")
 
     fun formatInr(amount: Double): String {
-        val formatter = NumberFormat.getNumberInstance(indianLocale).apply {
-            maximumFractionDigits = if (amount % 1.0 == 0.0) 0 else 2
-            minimumFractionDigits = 0
+        val isNegative = amount < 0
+        val scaled = kotlin.math.round(kotlin.math.abs(amount) * 100.0).toLong()
+        val whole = scaled / 100L
+        val paise = scaled % 100L
+        val wholeStr = whole.toString()
+        val groupedWhole = if (wholeStr.length <= 3) {
+            wholeStr
+        } else {
+            val lastThree = wholeStr.takeLast(3)
+            val rest = wholeStr.dropLast(3)
+            val restGrouped = rest.reversed().chunked(2).joinToString(",").reversed()
+            "$restGrouped,$lastThree"
         }
-        return "₹${formatter.format(amount)}"
+        val decimalSuffix = if (paise > 0L) ".${paise.toString().padStart(2, '0')}" else ""
+        return "${if (isNegative) "-" else ""}₹$groupedWhole$decimalSuffix"
     }
 
     fun formatCompactInr(amount: Double): String {
